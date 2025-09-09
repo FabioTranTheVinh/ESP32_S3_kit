@@ -228,5 +228,6 @@ void loop()
     delay(1500);
     display.stopscroll();
     display.clearDisplay();
+    //test git commit
   }
 }
