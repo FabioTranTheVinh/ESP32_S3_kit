@@ -1,12 +1,13 @@
 #include <Arduino.h>
-#include <WiFi.h>
+//#include <WiFi.h>
 #include <BluetoothSerial.h>
 #include <FastLED.h>
 #include <HTTPClient.h>
+#include <queue.h>
 
 #include "wiring.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+//#include "freertos/FreeRTOS.h"
+//#include "freertos/task.h"
 #include "freertos/semphr.h"
 // #include <ArduinoJson.h>
 
@@ -18,6 +19,16 @@
 //Cấu hình cho I2S và MAX98357A
 #include <driver/i2s.h>
 #include <math.h>
+
+
+//#include "config.h"
+#include "ui_led.h"
+#include "network_wifi.h"
+
+
+// Tạo queue để gửi trạng thái đến LED task
+QueueHandle_t ledQueue;
+
 // // Định nghĩa các chân I2S kết nối với MAX98357A
 // #define I2S_LRCK_PIN 3
 // #define I2S_BCLK_PIN 4
@@ -75,13 +86,13 @@ TwoWire customI2C = TwoWire(0); // Sử dụng bus I2C thứ 0
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &customI2C, OLED_RESET);
 
 
-#define LED_PIN 48 // Chân GPIO của LED RGB
-#define NUM_LEDS 1 // Số lượng LED trên bo mạch
+// #define LED_PIN 48 // Chân GPIO của LED RGB
+ #define NUM_LEDS 1 // Số lượng LED trên bo mạch
 
-CRGB leds[NUM_LEDS];
+ static CRGB leds[NUM_LEDS];
 
-const char *ssid = "TTIGuest";
-const char *password = "TTIVisitor1985";
+// const char *ssid = "TTIGuest";
+// const char *password = "TTIVisitor1985";
 
 // Khai báo màu cho các trạng thái
 #define COLOR_BLUE   0x87CEEB
@@ -107,32 +118,15 @@ void blinkLED(uint32_t color, int delayTime, int count)
   }
 }
 
-
-// Khai báo các biến toàn cục cần thiết
-volatile bool buttonPressed = false; // Cờ báo hiệu nút đã được nhấn
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-unsigned long lastInterruptTime = 0;
-
-//==================================================
-// Interrupt Service Routine (ISR)
-//==================================================
-void IRAM_ATTR handleButtonInterrupt() {
-  // Critical section để tránh xung đột
-  portENTER_CRITICAL_ISR(&mux);
-  
-  // Debounce: bỏ qua các ngắt xảy ra quá gần nhau
-  unsigned long currentTime = millis();
-  if (currentTime - lastInterruptTime > 200) { // Debounce 200ms
-    buttonPressed = true; // Đánh dấu nút đã được nhấn
-  }
-  lastInterruptTime = currentTime;
-  
-  portEXIT_CRITICAL_ISR(&mux);
-}
-
 void setup()
 {
   Serial.begin(115200);
+
+  ledQueue = xQueueCreate(5, sizeof(int));
+  ui_led_init();
+  wifi_init();
+  
+  
 
   // Bắt đầu giao tiếp I2C với các chân tùy chỉnh
   customI2C.begin(CUSTOM_SDA, CUSTOM_SCL, 400000); // Tốc độ 400kHz
@@ -153,30 +147,32 @@ void setup()
 
 
 
-  FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
+  //FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
 
   // 1. Nhấp nháy màu vàng khi khởi động
-  fillLED(COLOR_BLUE); // Nhấp nháy 3 lần với 500ms mỗi lần
+  //fillLED(COLOR_BLUE); 
 
 
   // Khởi tạo kết nối WiFi
-  Serial.println("Connecting to WiFi...");
-  WiFi.begin(ssid, password);
+  //Serial.println("Connecting to WiFi...");
+  // WiFi.begin(ssid, password);
 
-  // Chờ kết nối
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-    // 2. Chuyển sang màu cam để thể hiện đang kết nối
-    blinkLED(COLOR_ORANGE, 200, 3);
-  }
+  // // Chờ kết nối
+  // while (WiFi.status() != WL_CONNECTED)
+  // {
+  //   delay(500);
+  //   Serial.print(".");
+  //   // 2. Chuyển sang màu cam để thể hiện đang kết nối
+  //   blinkLED(COLOR_ORANGE, 200, 3);
+  // }
 
-  // 3. Chuyển sang màu xanh khi kết nối thành công
-  fillLED(COLOR_PURPLE);
-  Serial.println("\nWiFi connected successfully!");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
+  // // 3. Chuyển sang màu xanh khi kết nối thành công
+  // fillLED(COLOR_PURPLE);
+  // Serial.println("\nWiFi connected successfully!");
+  // Serial.print("IP Address: ");
+  // Serial.println(WiFi.localIP());
+
+
 
   i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
   i2s_set_pin(I2S_NUM, &i2s_pin_config);
@@ -189,18 +185,17 @@ void setup()
   pinMode(BUTTON_Touch_PIN_1, INPUT_PULLDOWN);
   pinMode(BUTTON_PIN_DOWN, INPUT);
   pinMode(BUTTON_PIN_UP, INPUT);
-
-  attachInterrupt(digitalPinToInterrupt(BUTTON_Touch_PIN_1), handleButtonInterrupt, RISING);
-
+ 
   
+
+
 }
 
 void loop()
 {
 
-  if (buttonPressed) 
+  if (digitalRead(BUTTON_Touch_PIN_1) == HIGH) // Kiểm tra trạng thái nút bấm
   {
-    buttonPressed = false;
     Serial.println("ButtonTouch 1 Pressed");
     display.setCursor(0, 0);
     display.setTextSize(1);
