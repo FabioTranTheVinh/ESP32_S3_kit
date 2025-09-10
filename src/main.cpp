@@ -29,10 +29,6 @@
 // Tạo queue để gửi trạng thái đến LED task
 QueueHandle_t ledQueue;
 
-// // Định nghĩa các chân I2S kết nối với MAX98357A
-// #define I2S_LRCK_PIN 3
-// #define I2S_BCLK_PIN 4
-// #define I2S_DOUT_PIN 5
 
 // Định nghĩa bus I2S
 #define I2S_NUM I2S_NUM_0
@@ -86,38 +82,6 @@ TwoWire customI2C = TwoWire(0); // Sử dụng bus I2C thứ 0
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &customI2C, OLED_RESET);
 
 
-// #define LED_PIN 48 // Chân GPIO của LED RGB
- #define NUM_LEDS 1 // Số lượng LED trên bo mạch
-
- static CRGB leds[NUM_LEDS];
-
-// const char *ssid = "TTIGuest";
-// const char *password = "TTIVisitor1985";
-
-// Khai báo màu cho các trạng thái
-#define COLOR_BLUE   0x87CEEB
-#define COLOR_ORANGE 0xFFA500
-#define COLOR_PURPLE 0xF32BBB
-
-// Hàm để đổi màu đèn LED
-void fillLED(uint32_t color)
-{
-  leds[0] = color;
-  FastLED.show();
-}
-
-// Hàm để nhấp nháy đèn LED
-void blinkLED(uint32_t color, int delayTime, int count)
-{
-  for (int i = 0; i < count; i++)
-  {
-    fillLED(color);
-    delay(delayTime);
-    fillLED(0x000000); // Tắt đèn
-    delay(delayTime);
-  }
-}
-
 void setup()
 {
   Serial.begin(115200);
@@ -162,8 +126,6 @@ void setup()
   // {
   //   delay(500);
   //   Serial.print(".");
-  //   // 2. Chuyển sang màu cam để thể hiện đang kết nối
-  //   blinkLED(COLOR_ORANGE, 200, 3);
   // }
 
   // // 3. Chuyển sang màu xanh khi kết nối thành công
@@ -180,6 +142,7 @@ void setup()
   playSineWave(1000, 200); // 1000 Hz trong 200ms
     // Dừng I2S sau khi phát xong
   i2s_stop(I2S_NUM);
+  
 
   // Cấu hình chân nút bấm
   pinMode(BUTTON_Touch_PIN_1, INPUT_PULLDOWN);
@@ -194,35 +157,33 @@ void setup()
 void loop()
 {
 
-  if (digitalRead(BUTTON_Touch_PIN_1) == HIGH) // Kiểm tra trạng thái nút bấm
-  {
-    Serial.println("ButtonTouch 1 Pressed");
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.println("ButtonTouch 1 Pressed");
-    display.display();
-    blinkLED(COLOR_BLUE, 100, 5); // Nhấp nháy màu xanh dương
-    delay(500); // Chờ một chút để tránh việc đọc nhiều lần
-  }
-  else
-  {
-    // Scroll full screen
-    display.clearDisplay();
+  // if (digitalRead(BUTTON_Touch_PIN_1) == HIGH) // Kiểm tra trạng thái nút bấm
+  // {
+  //   Serial.println("ButtonTouch 1 Pressed");
+  //   display.setCursor(0, 0);
+  //   display.setTextSize(1);
+  //   display.println("ButtonTouch 1 Pressed");
+  //   display.display();
+  // }
+  // else
+  // {
+  //   // Scroll full screen
+  //   display.clearDisplay();
 
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.println("Fabio");
-    display.println("TTI");
-    display.println("scrolling!");
-    display.display();
-    display.startscrollright(0x00, 0x07);
-    delay(1500);
-    display.stopscroll();
-    delay(1000);
-    display.startscrollleft(0x00, 0x07);
-    delay(1500);
-    display.stopscroll();
-    display.clearDisplay();
-    //test git commit
-  }
+  //   display.setCursor(0, 0);
+  //   display.setTextSize(1);
+  //   display.println("Fabio");
+  //   display.println("TTI");
+  //   display.println("scrolling!");
+  //   display.display();
+  //   display.startscrollright(0x00, 0x07);
+  //   delay(1500);
+  //   display.stopscroll();
+  //   delay(1000);
+  //   display.startscrollleft(0x00, 0x07);
+  //   delay(1500);
+  //   display.stopscroll();
+  //   display.clearDisplay();
+  //   //test git commit
+  //}
 }

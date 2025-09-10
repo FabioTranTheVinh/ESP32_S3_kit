@@ -19,8 +19,9 @@ typedef enum {
     STATE_WIFI_DISCONNECTED,
     STATE_AUDIO_RECORDING,
     STATE_ERROR
-} system_state_led_t;
+} system_state_led_e;
 
 void ui_led_init(void);
-void blinkLED(CRGB leds[], int delayTime, int count);
-void updateLedStateFromQueue(system_state_led_t *currentState);
+//void blinkLED(CRGB leds[], int delayTime, int count);
+void blinkLED(int delaytime, int count);
+void updateLedStateFromQueue(system_state_led_e *currentState);
