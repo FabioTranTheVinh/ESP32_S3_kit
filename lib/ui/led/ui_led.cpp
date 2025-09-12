@@ -24,7 +24,7 @@ void ui_led_task(void *parameters)
     /** Init the FastLED library */
     FastLED.addLeds<NEOPIXEL, RGB_LED_PIN>(leds, LEDS_NUM);
 
-    FastLED.setBrightness(50); // Set initial brightness to a moderate level
+    FastLED.setBrightness(RGB_MIN_BRIGHTNESS); // Set initial brightness to a moderate level
 
     /** Init the user button */
 

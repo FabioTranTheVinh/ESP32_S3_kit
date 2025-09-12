@@ -85,35 +85,35 @@ void ui_screen_set_new_step(display_index_e new_step)
             display.setCursor(41, 15);
             display.print("Name: FabioTran");
 
-            display.setCursor(41, 22);
-            display.print("Age:  29");
+            display.setCursor(41, 24);
+            display.print("Title:Soft Eng");
 
-            display.setCursor(41, 29);
-            display.print("Sex:  M");
+            display.setCursor(41, 33);
+            display.print("Age: 29");
 
-            display.setCursor(41, 36);
-            display.print("Wins:");
+            display.setCursor(41, 42);
+            display.print("Status: Single");
 
-            display.setCursor(41, 43);
-            display.print("Lost:");
+            // display.setCursor(41, 43);
+            // display.print("Lost: ");
 
-            display.setCursor(2, 51);
-            display.print("Shield:");
+            display.setCursor(41, 51);
+            display.print("Open To Work");
 
-            display.setCursor(2, 58);
-            display.print("Special:");
+            // display.setCursor(2, 58);
+            // display.print("Special:");
 
-            display.setCursor(65, 36);
-            display.print("000A");
+            // display.setCursor(65, 36);
+            // display.print("000A");
 
-            display.setCursor(68, 43);
-            display.print("000A");
+            // display.setCursor(68, 43);
+            // display.print("000A");
 
-            display.setCursor(33, 51);
-            display.print("Level 1");
+            // display.setCursor(33, 51);
+            // display.print("Level 1");
 
-            display.setCursor(37, 58);
-            display.print("Rockets Level 1");
+            // display.setCursor(37, 58);
+            // display.print("Rockets Level 1");
 
             display.drawBitmap(8, 14, image_profile_bits, 27, 24, 1);
 

@@ -1,8 +1,8 @@
 #include <Arduino.h>
 //#include <WiFi.h>
-#include <BluetoothSerial.h>
+//#include <BluetoothSerial.h>
 #include <FastLED.h>
-#include <HTTPClient.h>
+//#include <HTTPClient.h>
 #include <queue.h>
 
 #include "wiring.h"
