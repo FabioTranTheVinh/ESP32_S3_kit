@@ -1,5 +1,5 @@
 #include <FastLED.h>
-#include "ui_led.h"
+#include "led/ui_led.h"
 
 
 system_state_led_e currentState = STATE_IDLE; //kiem tra trang thai hien tai cua led
@@ -69,7 +69,7 @@ void ui_led_task(void *parameters)
                 //leds[1] = CRGB::Black;
                 break;
         }
-        blinkLED(200, 3);
+        blinkLED(150, 3);
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }

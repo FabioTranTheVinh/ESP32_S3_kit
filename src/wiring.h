@@ -13,13 +13,13 @@
 
 
     // Định nghĩa chân SDA và SCL tùy chỉnh
-    #define CUSTOM_SDA 1
-    #define CUSTOM_SCL 2
+    // #define CUSTOM_SDA 1
+    // #define CUSTOM_SCL 2
 
-    // Định nghĩa chân Input cho nút bấm
-    #define BUTTON_Touch_PIN_1 11
-    #define BUTTON_PIN_DOWN 6
-    #define BUTTON_PIN_UP 7 
+    // // Định nghĩa chân Input cho nút bấm
+    // #define BUTTON_Touch_PIN_1 11
+    // #define BUTTON_PIN_DOWN 6
+    // #define BUTTON_PIN_UP 7 
 
 
     // // Định nghĩa chân RGB LED

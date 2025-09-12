@@ -11,10 +11,10 @@
 #include "freertos/semphr.h"
 // #include <ArduinoJson.h>
 
-// Cấu hình cho OLED SSD1306
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+// // Cấu hình cho OLED SSD1306
+// #include <Wire.h>
+// #include <Adafruit_GFX.h>
+// #include <Adafruit_SSD1306.h>
 
 //Cấu hình cho I2S và MAX98357A
 #include <driver/i2s.h>
@@ -22,8 +22,14 @@
 
 
 //#include "config.h"
-#include "ui_led.h"
+#include "led/ui_led.h"
 #include "network_wifi.h"
+#include "button/button.h"
+#include "ble.h"
+#include "sdcard.h"
+#include "microphone.h"
+#include "audio_handler.h"
+#include "oled/oled.h"
 
 
 // Tạo queue để gửi trạng thái đến LED task
@@ -70,16 +76,16 @@ void playSineWave(int frequency, int duration_ms) {
   }
 }
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_RESET    -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-// Định nghĩa chân SDA và SCL tùy chỉnh
-// #define CUSTOM_SDA 1
-// #define CUSTOM_SCL 2
-TwoWire customI2C = TwoWire(0); // Sử dụng bus I2C thứ 0
+// #define SCREEN_WIDTH 128 // OLED display width, in pixels
+// #define SCREEN_HEIGHT 64 // OLED display height, in pixels
+// #define OLED_RESET    -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+// #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+// // Định nghĩa chân SDA và SCL tùy chỉnh
+// // #define CUSTOM_SDA 1
+// // #define CUSTOM_SCL 2
+// TwoWire customI2C = TwoWire(0); // Sử dụng bus I2C thứ 0
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &customI2C, OLED_RESET);
+// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &customI2C, OLED_RESET);
 
 
 void setup()
@@ -87,28 +93,41 @@ void setup()
   Serial.begin(115200);
 
   ledQueue = xQueueCreate(5, sizeof(int));
+
   ui_led_init();
   wifi_init();
+  ble_init();
+  sdcard_init();
+  mic_init();
+  audio_handler_init();
+  ui_button_init();
+  ui_oled_init();
+
   
   
 
-  // Bắt đầu giao tiếp I2C với các chân tùy chỉnh
-  customI2C.begin(CUSTOM_SDA, CUSTOM_SCL, 400000); // Tốc độ 400kHz
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-  Serial.println(F("SSD1306 allocation failed"));
-  for (;;); // Don't proceed, loop forever
-  }
-  display.clearDisplay();
+  // // Bắt đầu giao tiếp I2C với các chân tùy chỉnh
+  // customI2C.begin(CUSTOM_SDA, CUSTOM_SCL, 400000); // Tốc độ 400kHz
+  // // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  // if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+  // Serial.println(F("SSD1306 allocation failed"));
+  // for (;;); // Don't proceed, loop forever
+  // }
+  // display.clearDisplay();
 
-  display.setTextSize(1);
-  display.setTextColor(BLACK, WHITE); // 'inverted' text
-  display.setCursor(0, 28);
-  display.println("Hello world!");
-  display.display();
-  delay(200);
-  //display.clearDisplay();
+  // display.setTextSize(1);
+  // //display.setTextColor(BLACK, WHITE); // 'inverted' text
+  // display.setTextColor(WHITE); // 'inverted' text
+  // display.setCursor(0, 28);
+  // display.println("Hello world!");
+  // display.display();
+  // delay(1000);
+  
 
+  // display.clearDisplay();
+  // display.drawBitmap(0, 0, image_download_bits, 128, 64, 1);
+  // display.display();
+  // delay(5000);
 
 
   //FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
@@ -136,18 +155,18 @@ void setup()
 
 
 
-  i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
-  i2s_set_pin(I2S_NUM, &i2s_pin_config);
-  // Phát tiếng bíp duy nhất
-  playSineWave(1000, 200); // 1000 Hz trong 200ms
-    // Dừng I2S sau khi phát xong
-  i2s_stop(I2S_NUM);
+  // i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
+  // i2s_set_pin(I2S_NUM, &i2s_pin_config);
+  // // Phát tiếng bíp duy nhất
+  // playSineWave(1000, 200); // 1000 Hz trong 200ms
+  //   // Dừng I2S sau khi phát xong
+  // i2s_stop(I2S_NUM);
   
 
-  // Cấu hình chân nút bấm
-  pinMode(BUTTON_Touch_PIN_1, INPUT_PULLDOWN);
-  pinMode(BUTTON_PIN_DOWN, INPUT);
-  pinMode(BUTTON_PIN_UP, INPUT);
+  // // Cấu hình chân nút bấm
+  // pinMode(BUTTON_Touch_PIN_1, INPUT_PULLDOWN);
+  // pinMode(BUTTON_PIN_DOWN, INPUT);
+  // pinMode(BUTTON_PIN_UP, INPUT);
  
   
 

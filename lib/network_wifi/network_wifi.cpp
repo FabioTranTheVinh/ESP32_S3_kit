@@ -1,11 +1,11 @@
 #include <WiFi.h>
 #include "network_wifi.h"
-#include "ui_led.h"
+#include "led/ui_led.h"
 
 
 void wifi_task(void *pvParameters)
 {
-    system_state_led_e new_led_state;
+    system_state_led_e _new_led_state;
 
     // Khởi tạo WiFi (chạy 1 lần)
     Serial.println("Connecting to WiFi...");
@@ -13,19 +13,19 @@ void wifi_task(void *pvParameters)
     while (WiFi.status() != WL_CONNECTED)
     {
         Serial.print(".");
-        new_led_state = STATE_WIFI_CONNECTING;
-        xQueueSend(ledQueue, &new_led_state, portMAX_DELAY);
+        _new_led_state = STATE_WIFI_CONNECTING;
+        xQueueSend(ledQueue, &_new_led_state, portMAX_DELAY);
         vTaskDelay(200 / portTICK_PERIOD_MS);
 
     }
-    new_led_state = STATE_WIFI_CONNECTED;
-    xQueueSend(ledQueue, &new_led_state, portMAX_DELAY);
+    _new_led_state = STATE_WIFI_CONNECTED;
+    xQueueSend(ledQueue, &_new_led_state, portMAX_DELAY);
     Serial.println("\nWiFi connected successfully!");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
 
     bool wifi_disconent_flag = false;
-    
+
     while(1) {
         // Duy trì kết nối WiFi
         
@@ -34,8 +34,8 @@ void wifi_task(void *pvParameters)
             wifi_disconent_flag = true;
             WiFi.reconnect();
             Serial.print("WiFi reconnecting...");
-            new_led_state = STATE_WIFI_CONNECTING;
-            xQueueSend(ledQueue, &new_led_state, portMAX_DELAY);
+            _new_led_state = STATE_WIFI_CONNECTING;
+            xQueueSend(ledQueue, &_new_led_state, portMAX_DELAY);
         }
         else
         {
@@ -44,8 +44,8 @@ void wifi_task(void *pvParameters)
                 wifi_disconent_flag = false;
                 Serial.print("WiFi reconnected. IP: ");
                 Serial.println(WiFi.localIP());
-                new_led_state = STATE_WIFI_CONNECTED;
-                xQueueSend(ledQueue, &new_led_state, portMAX_DELAY);
+                _new_led_state = STATE_WIFI_CONNECTED;
+                xQueueSend(ledQueue, &_new_led_state, portMAX_DELAY);
             }
         }
         vTaskDelay(5000 / portTICK_PERIOD_MS);
