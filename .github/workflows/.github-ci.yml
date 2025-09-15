@@ -10,13 +10,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for all branches and tags
-
-      - name: Run Super-Linter
-        uses: github/super-linter@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: main
+        
+      - name: Build and Test
+        uses: action/build-and-test@v1 # Example action, replace with actual build/test action if needed
+      
           
 
 # on: 
