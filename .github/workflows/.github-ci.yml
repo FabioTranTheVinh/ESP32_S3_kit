@@ -1,9 +1,11 @@
 name: CI Pipeline
-on:
-  push:
-    branches: [ "master" , "main"]
-  pull_request:
-    branches: [ "master" , "main"]
+on: [push, pull_request]
+
+# on:
+#   push:
+#     branches: [ "master" , "main"]
+#   pull_request:
+#     branches: [ "master" , "main"]
 
 env: 
   BUILD_TYPE: Debug
