@@ -1,5 +1,6 @@
 #pragma once
 #include <Wire.h>     // I2C library
+#include <Adafruit_SSD1306.h>
 
 
 static const unsigned char PROGMEM image_mountain_bits[] = {0xff,0xff,0xea,0xaa,0xaa,0xaa,0xaa,0xaa,0xaa
@@ -67,6 +68,7 @@ typedef enum
     DISP_INDEX_PROFILE_PIC,
 } display_index_e;
 
+extern Adafruit_SSD1306 display;
 
 void ui_oled_init();
 void ui_screen_set_new_step(display_index_e new_step);

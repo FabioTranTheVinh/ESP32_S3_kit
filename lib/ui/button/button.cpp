@@ -58,7 +58,6 @@ void button_task(void *pvParameters)
         // Đọc trạng thái nút bấm và xử lý
         vTaskDelay(50 / portTICK_PERIOD_MS); // Giả sử cập nhật trạng thái nút mỗi 10ms
     }
-
 }
 
 void ui_button_init()
