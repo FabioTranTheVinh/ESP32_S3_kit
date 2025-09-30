@@ -68,7 +68,11 @@ typedef enum
     DISP_INDEX_PROFILE_PIC,
 } display_index_e;
 
-extern Adafruit_SSD1306 display;
+class MakeFont;
 
+extern Adafruit_SSD1306 display;
+extern MakeFont my_vn_font;
+
+void setpx(int16_t x,int16_t y,uint16_t color);
 void ui_oled_init();
 void ui_screen_set_new_step(display_index_e new_step);

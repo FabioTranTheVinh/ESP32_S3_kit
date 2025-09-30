@@ -3,10 +3,14 @@
 #include "navigate.h"
 #include <ChronosESP32.h>
 #include "oled/oled.h"
+#include "FontMaker.h"
 
-ChronosESP32 watch("ESP33Kit"); // set the bluetooth name
+
+
+ChronosESP32 watch("ESP32Kit"); // set the bluetooth name
 bool change = false;
 uint32_t nav_crc = 0xFFFFFFFF;
+int xPos = 0;   // bắt đầu từ ngoài màn hình bên phải
 
 // Thêm biến toàn cục để lưu trữ dữ liệu navigation và trạng thái
 Navigation currentNavData;
@@ -17,7 +21,7 @@ void navigate_task(void *pvParameters)
 
     //set the callbacks before calling begin funtion
     watch.setConnectionCallback(connectionCallback);
-    //watch.setNotificationCallback(notificationCallback);
+    watch.setNotificationCallback(notificationCallback);
     watch.setConfigurationCallback(configCallback);
     watch.begin(); // initializes the BLE
     //Serial.println(watch.getAddress()); // mac address, call after begin()
@@ -48,12 +52,12 @@ void navigate_task(void *pvParameters)
             
         // }
         //Kiểm tra cờ 'change' để cập nhật màn hình OLED
-        //if (change) 
-        //{
+        if (change) 
+        {
             updateNavigationDisplay(); // Gọi hàm cập nhật hiển thị
-        //    change = false; // Reset cờ để chỉ cập nhật khi có thay đổi mới
-        //}
-        vTaskDelay(500 / portTICK_PERIOD_MS); // Giả sử cập nhật mỗi giây
+            change = false; // Reset cờ để chỉ cập nhật khi có thay đổi mới
+        }
+        vTaskDelay(100 / portTICK_PERIOD_MS); // Giả sử cập nhật mỗi giây
     }
 }
 
@@ -72,21 +76,21 @@ void connectionCallback(bool state)
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0,0);
-    display.print("Status: ");
+    display.print("BLEstatus: ");
     display.println(state ? "Connected" : "Disconnected");
     display.display();
 }
 
 void notificationCallback(Notification notification)
-{/*
-    Serial.print("Notification received at ");
-    Serial.println(notification.time);
-    Serial.print("From: ");
-    Serial.print(notification.app);
-    Serial.print("\tIcon: ");
-    Serial.println(notification.icon);
-    Serial.println(notification.title);
-    Serial.println(notification.message);
+{
+    // Serial.print("Notification received at ");
+    // Serial.println(notification.time);
+    // Serial.print("From: ");
+    // Serial.print(notification.app);
+    // Serial.print("\tIcon: ");
+    // Serial.println(notification.icon);
+    // Serial.println(notification.title);
+    // Serial.println(notification.message);
 
     // Hiển thị thông báo lên OLED (có thể cần cuộn hoặc hiển thị từng phần)
     display.clearDisplay();
@@ -108,22 +112,23 @@ void notificationCallback(Notification notification)
     } else {
         display.println(notification.message);
     }
-    display.display();*/
+    display.display();
 }
 
 
 // Hàm mới để cập nhật hiển thị OLED (bao gồm icon và văn bản)
 void updateNavigationDisplay() {
     // Chỉ hiển thị nếu navigation đang hoạt động
-    currentNavData = watch.getNavigation();
       
     if (!isNavigationActive) {
         display.clearDisplay();
         display.setTextSize(1);
         display.setTextColor(SSD1306_WHITE);
-        display.setCursor(0,0);
+        display.setCursor(0,10);
         display.println("Navigation Inactive");
         display.display();
+
+        xPos = 0;
         return;
     }
 
@@ -148,28 +153,41 @@ void updateNavigationDisplay() {
     int text_start_x = 55;   // Bắt đầu văn bản từ cột 55 (bên phải icon 48px + khoảng trống)
     // Với setTextSize(1.5), chiều cao ký tự khoảng 12 pixel (8*1.5).
     // Dòng 16 pixel có vẻ phù hợp cho setTextSize(1.5) như bạn đã dùng.
-    int line_height = 16;
+    int line_height = 10;
 
 
     // CÁC DÒNG HIỂN THỊ THÔNG TIN VĂN BẢN
     display.setCursor(text_start_x, 0 * line_height);
     display.print("Dist: ");
     display.println(currentNavData.distance);
-
     display.setCursor(text_start_x, 1 * line_height);
-    display.println("Title: ");
+    display.print("Dur: "); display.println(currentNavData.duration);
 
-    display.setTextSize(2);
     display.setCursor(text_start_x, 2 * line_height);
+    //display.print("ETA: "); 
+    display.println(currentNavData.eta);
+
+    display.setCursor(text_start_x, 3 * line_height);
+    display.print("Next: ");
     display.println(currentNavData.title); // Đây là khoảng cách rẽ kế tiếp
+
+
+    // display.setTextSize(2);
+    // display.setCursor(text_start_x, 2 * line_height);
+    // display.println(currentNavData.title); // Đây là khoảng cách rẽ kế tiếp
 
     // Nếu bạn muốn hiển thị các thông tin khác từ nav object, hãy thêm vào đây
     // Ví dụ:
-    // display.setCursor(text_start_x, 2 * line_height);
-    // display.print("Dir: "); display.println(currentNavData.directions);
-    // display.setCursor(text_start_x, 3 * line_height);
-    // display.print("ETA: "); display.println(currentNavData.eta);
+    //display.setCursor(text_start_x, 4 * line_height);
+    //display.print("Dir: "); display.println(currentNavData.directions);
+    my_vn_font.print(xPos, (5 * line_height)+3, currentNavData.directions, WHITE);
 
+    xPos -= 15; // Di chuyển sang trái 2 pixel mỗi lần cập nhật
+    if (xPos < - (int) (currentNavData.directions.length() * 6)) { // Nếu đã trôi hết chữ
+        xPos = 127; // Đặt lại vị trí bắt đầu từ bên        
+    }
+    
+    draw_line_time();
 
     display.display(); // Đẩy tất cả dữ liệu ra màn hình
 }
@@ -197,7 +215,9 @@ void configCallback(Config config, uint32_t a, uint32_t b)
             //Serial.println(currentNavData.next_step_distance);
 
             change = true; // Đặt cờ để biết cần cập nhật hiển thị OLED
-        } else { // Nếu navigation không active
+        } 
+        else 
+        { // Nếu navigation không active
             change = true; // Đặt cờ để gọi updateNavigationDisplay() để hiển thị "Inactive"
         }
         break;
@@ -217,6 +237,17 @@ void configCallback(Config config, uint32_t a, uint32_t b)
             }
         }
         break;
+    }
+}
+
+void draw_line_time()
+{
+    // 48-52
+    // Vẽ dòng thời gian ở dưới cùng
+    display.drawLine(0, 52, 127, 52, SSD1306_WHITE); // Dòng ngang dưới cùng
+    // Vẽ vạch dọc mỗi 10 pixel
+    for (int x = 0; x <= 127; x += 2) {
+        display.drawLine(x, 48, x, 51, SSD1306_WHITE);
     }
 }
 

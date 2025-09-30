@@ -8,3 +8,4 @@ void connectionCallback(bool state);
 void notificationCallback(Notification notification);
 void configCallback(Config config, uint32_t a, uint32_t b);
 void updateNavigationDisplay();
+void draw_line_time();
