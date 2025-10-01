@@ -9,11 +9,16 @@
 
 ChronosESP32 watch("ESP32Kit"); // set the bluetooth name
 bool change = false;
+lane_track_t lane_track_total, lane_track_current;
+String str_lane_dist = "";
+float f_lane_dist = 0;
+char unit[3]; // Đủ chỗ cho "km", "m" và ký tự null '\0' 
 uint32_t nav_crc = 0xFFFFFFFF;
 int xPos = 0;   // bắt đầu từ ngoài màn hình bên phải
 
 // Thêm biến toàn cục để lưu trữ dữ liệu navigation và trạng thái
 Navigation currentNavData;
+
 bool isNavigationActive = false; // Biến theo dõi trạng thái dẫn đường
 
 void navigate_task(void *pvParameters)
@@ -129,6 +134,8 @@ void updateNavigationDisplay() {
         display.display();
 
         xPos = 0;
+        str_lane_dist = "";
+        nav_crc = 0xFFFFFFFF; // Đặt lại CRC để khi navigation active lại, icon sẽ được cập nhật
         return;
     }
 
@@ -167,8 +174,9 @@ void updateNavigationDisplay() {
     //display.print("ETA: "); 
     display.println(currentNavData.eta);
 
+    display.setTextSize(2);
     display.setCursor(text_start_x, 3 * line_height);
-    display.print("Next: ");
+    //display.print("Next: ");
     display.println(currentNavData.title); // Đây là khoảng cách rẽ kế tiếp
 
 
@@ -234,6 +242,17 @@ void configCallback(Config config, uint32_t a, uint32_t b)
                 nav_crc = tempNav.iconCRC;
                 currentNavData = tempNav; // Lưu dữ liệu icon vào biến toàn cục
                 change = true; // Đặt cờ để cập nhật hiển thị OLED
+                //str_lane_dist = currentNavData.title; // Cờ để cập nhật lane và distance
+                // Dùng "%f%s" để đọc giá trị float và sau đó là một chuỗi (đơn vị)
+
+                sscanf(currentNavData.title.c_str(), "%f%s", &lane_track_total.f_dist, lane_track_total.units);
+                if (strcmp(lane_track_total.units, "m") == 0) {
+                    lane_track_total.f_dist_convert = lane_track_total.f_dist; // Đã là mét
+                } else if (strcmp(lane_track_total.units, "km") == 0) {
+                    lane_track_total.f_dist_convert = lane_track_total.f_dist * 1000.0; // Chuyển km sang m
+                } else {
+                    lane_track_total.f_dist_convert = lane_track_total.f_dist; // Mặc định giữ nguyên nếu không nhận diện được
+                }
             }
         }
         break;
@@ -246,8 +265,29 @@ void draw_line_time()
     // Vẽ dòng thời gian ở dưới cùng
     display.drawLine(0, 52, 127, 52, SSD1306_WHITE); // Dòng ngang dưới cùng
     // Vẽ vạch dọc mỗi 10 pixel
-    for (int x = 0; x <= 127; x += 2) {
-        display.drawLine(x, 48, x, 51, SSD1306_WHITE);
+    for (int x = 0; x <= 127; x += 5) {
+        display.drawLine(x, 51, x, 52, SSD1306_WHITE);
     }
+
+
+    sscanf(currentNavData.title.c_str(), "%f%s", &lane_track_current.f_dist, lane_track_current.units);
+    if (strcmp(lane_track_current.units, "m") == 0) {
+        lane_track_current.f_dist_convert = lane_track_current.f_dist; // Đã là mét
+    } else if (strcmp(lane_track_current.units, "km") == 0) {
+        lane_track_current.f_dist_convert = lane_track_current.f_dist * 1000.0; // Chuyển km sang m
+    } else {
+        lane_track_current.f_dist_convert = lane_track_current.f_dist; // Mặc định giữ nguyên nếu không nhận diện được
+    }
+
+
+    if (lane_track_current.f_dist_convert > 0.0f && lane_track_total.f_dist_convert > 0.0f)
+    {
+        // Vẽ mũi tên ở vị trí tương ứng
+        int arrow_x = map(lane_track_current.f_dist_convert, lane_track_total.f_dist_convert, 0, 0, 127); // Giả sử khoảng cách tối đa là 1000m
+        display.fillTriangle(arrow_x, 52, arrow_x - 3, 47, arrow_x + 3, 47, SSD1306_WHITE);
+    }
+
+    Serial.println(f_lane_dist);
+    Serial.println(unit);
 }
 
