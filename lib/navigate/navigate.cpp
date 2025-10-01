@@ -11,8 +11,6 @@ ChronosESP32 watch("ESP32Kit"); // set the bluetooth name
 bool change = false;
 lane_track_t lane_track_total, lane_track_current;
 String str_lane_dist = "";
-float f_lane_dist = 0;
-char unit[3]; // Đủ chỗ cho "km", "m" và ký tự null '\0' 
 uint32_t nav_crc = 0xFFFFFFFF;
 int xPos = 0;   // bắt đầu từ ngoài màn hình bên phải
 
@@ -188,7 +186,8 @@ void updateNavigationDisplay() {
     // Ví dụ:
     //display.setCursor(text_start_x, 4 * line_height);
     //display.print("Dir: "); display.println(currentNavData.directions);
-    my_vn_font.print(xPos, (5 * line_height)+3, currentNavData.directions, WHITE);
+    
+    my_vn_font.print(xPos, (5 * line_height)+2, currentNavData.directions, WHITE);
 
     xPos -= 15; // Di chuyển sang trái 2 pixel mỗi lần cập nhật
     if (xPos < - (int) (currentNavData.directions.length() * 6)) { // Nếu đã trôi hết chữ
@@ -245,13 +244,29 @@ void configCallback(Config config, uint32_t a, uint32_t b)
                 //str_lane_dist = currentNavData.title; // Cờ để cập nhật lane và distance
                 // Dùng "%f%s" để đọc giá trị float và sau đó là một chuỗi (đơn vị)
 
-                sscanf(currentNavData.title.c_str(), "%f%s", &lane_track_total.f_dist, lane_track_total.units);
-                if (strcmp(lane_track_total.units, "m") == 0) {
-                    lane_track_total.f_dist_convert = lane_track_total.f_dist; // Đã là mét
-                } else if (strcmp(lane_track_total.units, "km") == 0) {
-                    lane_track_total.f_dist_convert = lane_track_total.f_dist * 1000.0; // Chuyển km sang m
-                } else {
-                    lane_track_total.f_dist_convert = lane_track_total.f_dist; // Mặc định giữ nguyên nếu không nhận diện được
+                const unsigned long timeout = 2000; // 2 giây
+                unsigned long start_time = millis();
+                while (start_time + timeout > millis())  // enter đến khi timeout
+                {
+                    bool is_title_invalid = (currentNavData.title.length() == 0 
+                                            || currentNavData.title.equalsIgnoreCase("null")    
+                                            || currentNavData.title.equalsIgnoreCase("0m"));    
+                    if (!is_title_invalid) 
+                    {
+
+                        // sscanf(currentNavData.title.c_str(), "%f%s", &lane_track_total.f_dist, lane_track_total.units);
+                        // if (strcmp(lane_track_total.units, "m") == 0) {
+                        //     lane_track_total.f_dist_convert = lane_track_total.f_dist; // Đã là mét
+                        // } else if (strcmp(lane_track_total.units, "km") == 0) {
+                        //     lane_track_total.f_dist_convert = lane_track_total.f_dist * 1000.0; // Chuyển km sang m
+                        // } else {
+                        //     lane_track_total.f_dist_convert = lane_track_total.f_dist; // Mặc định giữ nguyên nếu không nhận diện được
+                        // }
+
+                        lane_track_total.f_dist_convert = get_distance_to_next_turn(currentNavData.title);
+                        break;
+                    }
+                    vTaskDelay(100 / portTICK_PERIOD_MS); // Tránh chiếm CPU
                 }
             }
         }
@@ -266,28 +281,58 @@ void draw_line_time()
     display.drawLine(0, 52, 127, 52, SSD1306_WHITE); // Dòng ngang dưới cùng
     // Vẽ vạch dọc mỗi 10 pixel
     for (int x = 0; x <= 127; x += 5) {
-        display.drawLine(x, 51, x, 52, SSD1306_WHITE);
+        display.drawLine(x, 51, x, 51, SSD1306_WHITE);
     }
 
 
-    sscanf(currentNavData.title.c_str(), "%f%s", &lane_track_current.f_dist, lane_track_current.units);
-    if (strcmp(lane_track_current.units, "m") == 0) {
-        lane_track_current.f_dist_convert = lane_track_current.f_dist; // Đã là mét
-    } else if (strcmp(lane_track_current.units, "km") == 0) {
-        lane_track_current.f_dist_convert = lane_track_current.f_dist * 1000.0; // Chuyển km sang m
-    } else {
-        lane_track_current.f_dist_convert = lane_track_current.f_dist; // Mặc định giữ nguyên nếu không nhận diện được
-    }
+    // sscanf(currentNavData.title.c_str(), "%f%s", &lane_track_current.f_dist, lane_track_current.units);
+    // if (strcmp(lane_track_current.units, "m") == 0) {
+    //     lane_track_current.f_dist_convert = lane_track_current.f_dist; // Đã là mét
+    // } else if (strcmp(lane_track_current.units, "km") == 0) {
+    //     lane_track_current.f_dist_convert = lane_track_current.f_dist * 1000.0; // Chuyển km sang m
+    // } else {
+    //     lane_track_current.f_dist_convert = lane_track_current.f_dist; // Mặc định giữ nguyên nếu không nhận diện được
+    // }
+    lane_track_current.f_dist_convert = get_distance_to_next_turn(currentNavData.title);
 
 
     if (lane_track_current.f_dist_convert > 0.0f && lane_track_total.f_dist_convert > 0.0f)
     {
         // Vẽ mũi tên ở vị trí tương ứng
         int arrow_x = map(lane_track_current.f_dist_convert, lane_track_total.f_dist_convert, 0, 0, 127); // Giả sử khoảng cách tối đa là 1000m
-        display.fillTriangle(arrow_x, 52, arrow_x - 3, 47, arrow_x + 3, 47, SSD1306_WHITE);
+        display.fillTriangle(arrow_x, 51, arrow_x - 3, 46, arrow_x + 3, 46, SSD1306_WHITE);
     }
 
-    Serial.println(f_lane_dist);
-    Serial.println(unit);
 }
 
+
+float get_distance_to_next_turn(const String& title)
+{
+    float distance = 0.0f;
+    char unit[3] ={0}; // Đủ chỗ cho "km", "m" và ký tự null '\0'
+
+    //1. Trích xuất số và đơn vị từ chuỗi title
+    if (sscanf(title.c_str(), "%f%s", &distance, unit) == 2)
+    {
+        //2. Chuyển đổi đơn vị nếu cần
+        if (strcmp(unit, "km") == 0)
+        {
+            return distance *= 1000.0f; // Chuyển km sang m
+        }
+        else if (strcmp(unit, "m") == 0)
+        {
+            return distance;// Đơn vị đã là mét, không cần chuyển đổi
+        }
+        else
+        {
+            // Đơn vị không xác định, có thể xử lý lỗi ở đây nếu cần
+            return distance; // Hoặc giữ nguyên giá trị ban đầu
+        }
+    }
+    else
+    {
+        // Xử lý lỗi nếu không trích xuất được đúng định dạng
+        return distance = 0.0f; // Hoặc giá trị mặc định khác
+    }
+
+}
