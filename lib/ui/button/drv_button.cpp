@@ -12,7 +12,7 @@ void drv_button_init()
     pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
     
 
-    register_button_callback(BTN_INDEX_TOUCH, on_touch_button_pressed);
+    //register_button_callback(BTN_INDEX_TOUCH, on_touch_button_pressed);
     register_button_callback(BTN_INDEX_UPSIDE, on_upside_button_pressed);
     register_button_callback(BTN_INDEX_DOWNSIDE, on_downside_button_pressed);
     register_button_callback(BTN_GROUP_UPSIDE_DOWNSIDE, on_upside_downside_pressed);

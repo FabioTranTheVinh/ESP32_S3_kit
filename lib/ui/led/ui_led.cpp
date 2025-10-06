@@ -81,7 +81,7 @@ void updateLedStateFromQueue(system_state_led_e *currentState)
     if(xQueueReceive(ledQueue, &newState, 0) == pdTRUE) 
     {
         *currentState = (system_state_led_e)newState;
-        Serial.print("Trạng thái mới:  ");
+        Serial.print("LED_new_State:  ");
         //Serial.println(currentState);
     }
 }
