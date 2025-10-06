@@ -27,12 +27,13 @@ void ui_oled_init()
         for (;;); // Don't proceed, loop forever
     }
 
-    display.clearDisplay();
-    display.setTextSize(1);
-    //display.setTextColor(BLACK, WHITE); // 'inverted' text
-    display.setTextColor(WHITE); // 'inverted' text
-    display.setCursor(0, 28);
-    display.println("Hello world!");
+    // display.clearDisplay();
+    // display.setTextSize(1);
+    // //display.setTextColor(BLACK, WHITE); // 'inverted' text
+    // display.setTextColor(WHITE); // 'inverted' text
+    // display.setCursor(0, 28);
+    // display.println("Hello world!");
+    ui_screen_set_new_step(DISP_INDEX_PROFILE_PIC);
     display.display();
     delay(1000);
 }

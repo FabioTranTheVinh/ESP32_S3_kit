@@ -4,10 +4,10 @@
 #include "oled/oled.h"
 
 
-// void on_touch_button_pressed() {
-//     printf("Nút TOUCH đã được nhấn!\n");
-//     ui_screen_set_new_step(DISP_INDEX_PROFILE_PIC);
-// }
+void on_touch_button_pressed() {
+    printf("Nút TOUCH đã được nhấn!\n");
+    //ui_screen_set_new_step(DISP_INDEX_PROFILE_PIC);
+}
 
 void on_upside_button_pressed() {
     printf("Nút UPSIDE đã được nhấn!\n");
