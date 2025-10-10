@@ -1,27 +1,42 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <BluetoothSerial.h>
+//#include <WiFi.h>
+//#include <BluetoothSerial.h>
 #include <FastLED.h>
-#include <HTTPClient.h>
+//#include <HTTPClient.h>
+#include <queue.h>
 
 #include "wiring.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+//#include "freertos/FreeRTOS.h"
+//#include "freertos/task.h"
 #include "freertos/semphr.h"
 // #include <ArduinoJson.h>
 
-// Cấu hình cho OLED SSD1306
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+// // Cấu hình cho OLED SSD1306
+// #include <Wire.h>
+// #include <Adafruit_GFX.h>
+// #include <Adafruit_SSD1306.h>
 
 //Cấu hình cho I2S và MAX98357A
 #include <driver/i2s.h>
 #include <math.h>
-// // Định nghĩa các chân I2S kết nối với MAX98357A
-// #define I2S_LRCK_PIN 3
-// #define I2S_BCLK_PIN 4
-// #define I2S_DOUT_PIN 5
+
+
+//#include "config.h"
+#include "led/ui_led.h"
+#include "network_wifi.h"
+#include "button/button.h"
+#include "ble.h"
+#include "sdcard.h"
+#include "microphone.h"
+#include "audio_handler.h"
+#include "oled/oled.h"
+
+#include "navigate.h"
+
+
+// Tạo queue để gửi trạng thái đến LED task
+QueueHandle_t ledQueue;
+
 
 // Định nghĩa bus I2S
 #define I2S_NUM I2S_NUM_0
@@ -63,171 +78,137 @@ void playSineWave(int frequency, int duration_ms) {
   }
 }
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_RESET    -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-// Định nghĩa chân SDA và SCL tùy chỉnh
-// #define CUSTOM_SDA 1
-// #define CUSTOM_SCL 2
-TwoWire customI2C = TwoWire(0); // Sử dụng bus I2C thứ 0
+// #define SCREEN_WIDTH 128 // OLED display width, in pixels
+// #define SCREEN_HEIGHT 64 // OLED display height, in pixels
+// #define OLED_RESET    -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+// #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+// // Định nghĩa chân SDA và SCL tùy chỉnh
+// // #define CUSTOM_SDA 1
+// // #define CUSTOM_SCL 2
+// TwoWire customI2C = TwoWire(0); // Sử dụng bus I2C thứ 0
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &customI2C, OLED_RESET);
+// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &customI2C, OLED_RESET);
 
-
-#define LED_PIN 48 // Chân GPIO của LED RGB
-#define NUM_LEDS 1 // Số lượng LED trên bo mạch
-
-CRGB leds[NUM_LEDS];
-
-const char *ssid = "TTIGuest";
-const char *password = "TTIVisitor1985";
-
-// Khai báo màu cho các trạng thái
-#define COLOR_BLUE   0x87CEEB
-#define COLOR_ORANGE 0xFFA500
-#define COLOR_PURPLE 0xF32BBB
-
-// Hàm để đổi màu đèn LED
-void fillLED(uint32_t color)
-{
-  leds[0] = color;
-  FastLED.show();
-}
-
-// Hàm để nhấp nháy đèn LED
-void blinkLED(uint32_t color, int delayTime, int count)
-{
-  for (int i = 0; i < count; i++)
-  {
-    fillLED(color);
-    delay(delayTime);
-    fillLED(0x000000); // Tắt đèn
-    delay(delayTime);
-  }
-}
-
-
-// Khai báo các biến toàn cục cần thiết
-volatile bool buttonPressed = false; // Cờ báo hiệu nút đã được nhấn
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-unsigned long lastInterruptTime = 0;
-
-//==================================================
-// Interrupt Service Routine (ISR)
-//==================================================
-void IRAM_ATTR handleButtonInterrupt() {
-  // Critical section để tránh xung đột
-  portENTER_CRITICAL_ISR(&mux);
-  
-  // Debounce: bỏ qua các ngắt xảy ra quá gần nhau
-  unsigned long currentTime = millis();
-  if (currentTime - lastInterruptTime > 200) { // Debounce 200ms
-    buttonPressed = true; // Đánh dấu nút đã được nhấn
-  }
-  lastInterruptTime = currentTime;
-  
-  portEXIT_CRITICAL_ISR(&mux);
-}
 
 void setup()
 {
+  delay(500);
   Serial.begin(115200);
+  Serial.println("ESP IS READY");
 
-  // Bắt đầu giao tiếp I2C với các chân tùy chỉnh
-  customI2C.begin(CUSTOM_SDA, CUSTOM_SCL, 400000); // Tốc độ 400kHz
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-  Serial.println(F("SSD1306 allocation failed"));
-  for (;;); // Don't proceed, loop forever
-  }
-  display.clearDisplay();
+  ledQueue = xQueueCreate(5, sizeof(int));
 
-  display.setTextSize(1);
-  display.setTextColor(BLACK, WHITE); // 'inverted' text
-  display.setCursor(0, 28);
-  display.println("Hello world!");
-  display.display();
-  delay(200);
-  //display.clearDisplay();
+  ui_oled_init();
+  ui_led_init();
+  wifi_init();
+  ble_init();
+  sdcard_init();
+  mic_init();
+  audio_handler_init();
+  ui_button_init();
+
+  navigate_init();
+
+  
+  
+
+  // // Bắt đầu giao tiếp I2C với các chân tùy chỉnh
+  // customI2C.begin(CUSTOM_SDA, CUSTOM_SCL, 400000); // Tốc độ 400kHz
+  // // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  // if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+  // Serial.println(F("SSD1306 allocation failed"));
+  // for (;;); // Don't proceed, loop forever
+  // }
+  // display.clearDisplay();
+
+  // display.setTextSize(1);
+  // //display.setTextColor(BLACK, WHITE); // 'inverted' text
+  // display.setTextColor(WHITE); // 'inverted' text
+  // display.setCursor(0, 28);
+  // display.println("Hello world!");
+  // display.display();
+  // delay(1000);
+  
+
+  // display.clearDisplay();
+  // display.drawBitmap(0, 0, image_download_bits, 128, 64, 1);
+  // display.display();
+  // delay(5000);
 
 
-
-  FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
+  //FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
 
   // 1. Nhấp nháy màu vàng khi khởi động
-  fillLED(COLOR_BLUE); // Nhấp nháy 3 lần với 500ms mỗi lần
+  //fillLED(COLOR_BLUE); 
 
 
   // Khởi tạo kết nối WiFi
-  Serial.println("Connecting to WiFi...");
-  WiFi.begin(ssid, password);
+  //Serial.println("Connecting to WiFi...");
+  // WiFi.begin(ssid, password);
 
-  // Chờ kết nối
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-    // 2. Chuyển sang màu cam để thể hiện đang kết nối
-    blinkLED(COLOR_ORANGE, 200, 3);
-  }
+  // // Chờ kết nối
+  // while (WiFi.status() != WL_CONNECTED)
+  // {
+  //   delay(500);
+  //   Serial.print(".");
+  // }
 
-  // 3. Chuyển sang màu xanh khi kết nối thành công
-  fillLED(COLOR_PURPLE);
-  Serial.println("\nWiFi connected successfully!");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
+  // // 3. Chuyển sang màu xanh khi kết nối thành công
+  // fillLED(COLOR_PURPLE);
+  // Serial.println("\nWiFi connected successfully!");
+  // Serial.print("IP Address: ");
+  // Serial.println(WiFi.localIP());
 
-  i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
-  i2s_set_pin(I2S_NUM, &i2s_pin_config);
-  // Phát tiếng bíp duy nhất
-  playSineWave(1000, 200); // 1000 Hz trong 200ms
-    // Dừng I2S sau khi phát xong
-  i2s_stop(I2S_NUM);
 
-  // Cấu hình chân nút bấm
-  pinMode(BUTTON_Touch_PIN_1, INPUT_PULLDOWN);
-  pinMode(BUTTON_PIN_DOWN, INPUT);
-  pinMode(BUTTON_PIN_UP, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(BUTTON_Touch_PIN_1), handleButtonInterrupt, RISING);
-
+  // i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
+  // i2s_set_pin(I2S_NUM, &i2s_pin_config);
+  // // Phát tiếng bíp duy nhất
+  // playSineWave(1000, 200); // 1000 Hz trong 200ms
+  //   // Dừng I2S sau khi phát xong
+  // i2s_stop(I2S_NUM);
   
+
+  // // Cấu hình chân nút bấm
+  // pinMode(BUTTON_Touch_PIN_1, INPUT_PULLDOWN);
+  // pinMode(BUTTON_PIN_DOWN, INPUT);
+  // pinMode(BUTTON_PIN_UP, INPUT);
+ 
+  
+
+
 }
 
 void loop()
 {
 
-  if (buttonPressed) 
-  {
-    buttonPressed = false;
-    Serial.println("ButtonTouch 1 Pressed");
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.println("ButtonTouch 1 Pressed");
-    display.display();
-    blinkLED(COLOR_BLUE, 100, 5); // Nhấp nháy màu xanh dương
-    delay(500); // Chờ một chút để tránh việc đọc nhiều lần
-  }
-  else
-  {
-    // Scroll full screen
-    display.clearDisplay();
+  // if (digitalRead(BUTTON_Touch_PIN_1) == HIGH) // Kiểm tra trạng thái nút bấm
+  // {
+  //   Serial.println("ButtonTouch 1 Pressed");
+  //   display.setCursor(0, 0);
+  //   display.setTextSize(1);
+  //   display.println("ButtonTouch 1 Pressed");
+  //   display.display();
+  // }
+  // else
+  // {
+  //   // Scroll full screen
+  //   display.clearDisplay();
 
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.println("Fabio");
-    display.println("TTI");
-    display.println("scrolling!");
-    display.display();
-    display.startscrollright(0x00, 0x07);
-    delay(1500);
-    display.stopscroll();
-    delay(1000);
-    display.startscrollleft(0x00, 0x07);
-    delay(1500);
-    display.stopscroll();
-    display.clearDisplay();
-    //test git commit
-  }
+  //   display.setCursor(0, 0);
+  //   display.setTextSize(1);
+  //   display.println("Fabio");
+  //   display.println("TTI");
+  //   display.println("scrolling!");
+  //   display.display();
+  //   display.startscrollright(0x00, 0x07);
+  //   delay(1500);
+  //   display.stopscroll();
+  //   delay(1000);
+  //   display.startscrollleft(0x00, 0x07);
+  //   delay(1500);
+  //   display.stopscroll();
+  //   display.clearDisplay();
+  //   //test git commit
+  //}
 }
