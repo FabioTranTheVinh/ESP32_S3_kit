@@ -100,7 +100,7 @@ void setup()
 
   ui_oled_init();
   ui_led_init();
-  //wifi_init();
+  wifi_init();
   ble_init();
   sdcard_init();
   mic_init();
