@@ -31,6 +31,8 @@
 #include "audio_handler.h"
 #include "oled/oled.h"
 
+#include "navigate.h"
+
 
 // Tạo queue để gửi trạng thái đến LED task
 QueueHandle_t ledQueue;
@@ -96,6 +98,7 @@ void setup()
 
   ledQueue = xQueueCreate(5, sizeof(int));
 
+  ui_oled_init();
   ui_led_init();
   wifi_init();
   ble_init();
@@ -103,7 +106,8 @@ void setup()
   mic_init();
   audio_handler_init();
   ui_button_init();
-  ui_oled_init();
+
+  navigate_init();
 
   
   

@@ -3,6 +3,15 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "oled/oled.h"
+#include <FontMaker.h>
+
+
+void setpx(int16_t x,int16_t y,uint16_t color)
+{
+  display.drawPixel(x,y,color);
+}
+MakeFont my_vn_font(&setpx);
+
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -27,13 +36,14 @@ void ui_oled_init()
         for (;;); // Don't proceed, loop forever
     }
 
-    // display.clearDisplay();
-    // display.setTextSize(1);
-    // //display.setTextColor(BLACK, WHITE); // 'inverted' text
-    // display.setTextColor(WHITE); // 'inverted' text
-    // display.setCursor(0, 28);
-    // display.println("Hello world!");
-    ui_screen_set_new_step(DISP_INDEX_PROFILE_PIC);
+    display.clearDisplay();
+    display.setTextSize(1);
+    //display.setTextColor(BLACK, WHITE); // 'inverted' text
+    display.setTextColor(WHITE); // 'inverted' text
+    my_vn_font.set_font(MakeFont_Font1);
+    display.setCursor(0, 28);
+    display.println("Hello Fabio");
+    my_vn_font.print(0,0,"Chào mừng bạn đến với ESP32!",WHITE);
     display.display();
     delay(1000);
 }
