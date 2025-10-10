@@ -6,53 +6,50 @@
 
 
 void on_touch_button_pressed() {
-    printf("Nút TOUCH đã được nhấn!\n");
+    Serial.printf("Button TOUCH!!!!!!!!!!!!\n");
     //ui_screen_set_new_step(DISP_INDEX_PROFILE_PIC);
 }
 
 void on_upside_button_pressed() {
-    printf("Nút UPSIDE đã được nhấn!\n");
+    Serial.printf("Button UP!!!!!!!!!!!!\n");
     ui_screen_set_new_step(DISP_INDEX_MOUNTAIN_PIC);
 }
 
 void on_downside_button_pressed() {
-    printf("Nút DOWNSIDE đã được nhấn!\n");
+    Serial.printf("Button DOWN!!!!!!!!!!!!\n");
     ui_screen_set_new_step(DISP_INDEX_MAP_PIC);
 }
 
 void on_upside_downside_pressed() {
-    printf("Nhóm nút UPSIDE và DOWNSIDE đã được nhấn!\n");
+    Serial.printf("Button UP+DOWN!!!!!!!!!!!!\n");
 }
 
-// Thêm các hàm khác cho các nhóm nút còn lại nếu cần...
 void on_touch_upside_pressed() {
-    printf("Nhóm nút TOUCH và UPSIDE đã được nhấn!\n");
+    Serial.printf("Button TOUCH+UP!!!!!!!!!!!!\n");
 }
 
 void on_touch_downside_pressed()
 {
-    printf("Nhóm nút TOUCH và DOWN đã được nhấn!\n");
+    Serial.printf("Button TOUCH+DOWN!!!!!!!!!!!!\n");
 }
 void on_touch_upside_downside_pressed()
 {
-    printf("Nhóm nút TOUCH và UPSIDE và DOWN đã được nhấn!\n");
+    Serial.printf("Button #ALL!!!!!!!!!!!!\n");
 }
 
 
 static void trigger_button_callback(button_index_e button_id)
 {
-    if (button_id < BTN_INDEX_MAX && g_btnCallbacks[button_id] != NULL)
+        if (button_id < BTN_INDEX_MAX && g_buttons[button_id].callback != NULL)
     {
-        g_btnCallbacks[button_id]();
+        g_buttons[button_id].callback();
     }
-
 }
 
 
 void button_task(void *pvParameters)
 {
     drv_button_init();
-    Serial.println("drv_button_init\n");
     uint32_t current_time = 0;
 
     while (1)
@@ -140,7 +137,7 @@ void button_task(void *pvParameters)
                     {
                         // Active Callback -call only once
                         trigger_button_callback((button_index_e)i);
-                        Serial.println("BTN_STATE_FINISHED!!!!");
+                        Serial.println("BTN_STATE_FINISHED!");
                         btn->is_pressed = false;
                         btn->last_change_time = current_time;
                         btn->event_triggered = false;
@@ -153,8 +150,6 @@ void button_task(void *pvParameters)
                     break;
             }
         }
-        // Xử lý button combinations
-        //check_group_button();
 
         // Đọc trạng thái nút bấm và xử lý
         vTaskDelay(100 / portTICK_PERIOD_MS); // Giả sử cập nhật trạng thái nút mỗi 10ms

@@ -90,9 +90,9 @@ void playSineWave(int frequency, int duration_ms) {
 
 void setup()
 {
-  delay(1000);
+  delay(500);
   Serial.begin(115200);
-  Serial.println("ESP is really");
+  Serial.println("ESP IS READY");
 
   ledQueue = xQueueCreate(5, sizeof(int));
 
