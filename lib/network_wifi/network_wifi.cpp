@@ -105,6 +105,6 @@ void wifi_task(void *pvParameters)
 void wifi_init(void)
 {
     //static TaskHandle_t ui_task_handle;
-    xTaskCreatePinnedToCore(wifi_task, "WiFi_task", 4096, NULL, 0, NULL, 0); // mức độ ưu tiên set 0 mới không bị Watchdog reset
+    xTaskCreatePinnedToCore(wifi_task, "WiFi_task", (1024 * 3), NULL, 0, NULL, 0); // mức độ ưu tiên set 0 (mức độ ưu tiên thấp nhất) mới không bị Watchdog reset
     //12288, 8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1
 }

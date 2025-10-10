@@ -81,7 +81,7 @@ void updateLedStateFromQueue(system_state_led_e *currentState)
     if(xQueueReceive(ledQueue, &newState, 0) == pdTRUE) 
     {
         *currentState = (system_state_led_e)newState;
-        Serial.print("LED_new_State:  ");
+        Serial.println("LED_new_State:  ");
         //Serial.println(currentState);
     }
 }
@@ -104,6 +104,6 @@ void updateLedStateFromQueue(system_state_led_e *currentState)
 void ui_led_init(void)
 {
     //static TaskHandle_t ui_task_handle;
-    xTaskCreatePinnedToCore(ui_led_task, "LED_RGB", 2048, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(ui_led_task, "LED_RGB", (1024 * 2), NULL, 1, NULL, 1);
 }
 

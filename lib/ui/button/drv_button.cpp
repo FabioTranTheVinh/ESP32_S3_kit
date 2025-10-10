@@ -3,7 +3,10 @@
 #include "button/drv_button.h"
 
 // Mảng lưu trữ các con trỏ hàm callback
-btnCallback g_btnCallbacks[BTN_INDEX_MAX];
+btnCallback g_btnCallbacks[BTN_INDEX_MAX] ={0};
+
+// Global button instances
+button_t g_buttons[BTN_INDEX_MAX];
 
 void drv_button_init()
 {
@@ -11,16 +14,24 @@ void drv_button_init()
     pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
     pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
     
+    memset(g_buttons, 0 , sizeof(g_buttons));
 
-    //register_button_callback(BTN_INDEX_TOUCH, on_touch_button_pressed);
+    g_buttons[BTN_INDEX_TOUCH].button_pin = BUTTON_TOUCH_PIN;
+    g_buttons[BTN_INDEX_TOUCH].active_level = true;  // PULLDOWN -> HIGH active
+
+    g_buttons[BTN_INDEX_UPSIDE].button_pin = BUTTON_UP_PIN;
+    g_buttons[BTN_INDEX_UPSIDE].active_level = false; // PULLUP -> LOW active
+    
+    g_buttons[BTN_INDEX_DOWNSIDE].button_pin = BUTTON_DOWN_PIN;
+    g_buttons[BTN_INDEX_DOWNSIDE].active_level = false; // PULLUP -> LOW active
+
+    register_button_callback(BTN_INDEX_TOUCH, on_touch_button_pressed);
     register_button_callback(BTN_INDEX_UPSIDE, on_upside_button_pressed);
     register_button_callback(BTN_INDEX_DOWNSIDE, on_downside_button_pressed);
     register_button_callback(BTN_GROUP_UPSIDE_DOWNSIDE, on_upside_downside_pressed);
     register_button_callback(BTN_GROUP_TOUCH_DOWNSIDE, on_touch_downside_pressed);
     register_button_callback(BTN_GROUP_TOUCH_UPSIDE, on_touch_upside_pressed);
     register_button_callback(BTN_GROUP_TOUCH_UPSIDE_DOWNSIDE,on_upside_downside_pressed);
-    
-    
 }
 
 //---------------------------------------------------------
