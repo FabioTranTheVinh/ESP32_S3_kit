@@ -3,7 +3,7 @@
 #include "navigate.h"
 #include <ChronosESP32.h>
 #include "oled/oled.h"
-#include "FontMaker.h"
+#include <FontMaker.h>
 
 
 
@@ -24,7 +24,7 @@ void navigate_task(void *pvParameters)
 
     //set the callbacks before calling begin funtion
     watch.setConnectionCallback(connectionCallback);
-    watch.setNotificationCallback(notificationCallback);
+    //watch.setNotificationCallback(notificationCallback);
     watch.setConfigurationCallback(configCallback);
     watch.begin(); // initializes the BLE
     //Serial.println(watch.getAddress()); // mac address, call after begin()
@@ -33,27 +33,7 @@ void navigate_task(void *pvParameters)
     while (1)
     {
         watch.loop(); // handles internal routine functions
-        // if (watch.isConnected()) {
-        //     Navigation nav = watch.getNavigation();
-        //     display.clearDisplay();
-        //     display.setTextSize(1);
-        //     display.setTextColor(SSD1306_WHITE);
-        //     display.setCursor(0, 0);
 
-        //     // Ví dụ hiển thị
-        //     display.print("Nav: ");
-        //     display.println(nav.directions);
-        //     display.print("Dist: ");
-        //     display.println(nav.distance);
-        //     // Serial.print("Directions: ");
-        //     // Serial.println(nav.directions);
-
-        //     // Nếu có icon, bạn có thể vẽ hình nhỏ tương ứng
-        //     // ví dụ nếu nav.icon == ICON_TURN_LEFT thì vẽ mũi tên trái,...
-
-        //     display.display();
-            
-        // }
         //Kiểm tra cờ 'change' để cập nhật màn hình OLED
         if (change) 
         {
@@ -66,7 +46,7 @@ void navigate_task(void *pvParameters)
 
 void navigate_init()
 {
-    xTaskCreatePinnedToCore(navigate_task, "Navigate", 4096, NULL, 4, NULL, 1);
+    xTaskCreatePinnedToCore(navigate_task, "Navigate", 4096, NULL, 3, NULL, 1);
 }
 
 void connectionCallback(bool state)
@@ -84,8 +64,8 @@ void connectionCallback(bool state)
     display.display();
 }
 
-void notificationCallback(Notification notification)
-{
+//void notificationCallback(Notification notification)
+//{
     // Serial.print("Notification received at ");
     // Serial.println(notification.time);
     // Serial.print("From: ");
@@ -96,27 +76,27 @@ void notificationCallback(Notification notification)
     // Serial.println(notification.message);
 
     // Hiển thị thông báo lên OLED (có thể cần cuộn hoặc hiển thị từng phần)
-    display.clearDisplay();
-    display.setTextSize(1); // Kích thước chữ nhỏ
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0,0);
-    display.println("NEW NOTIF:");
-    display.println("-----------");
-    display.print(notification.app);
-    display.print(": ");
-    // Giới hạn độ dài nội dung để không tràn màn hình
-    if (notification.title.length() > 20) { // Giới hạn 20 ký tự
-        display.println(notification.title.substring(0, 17) + "...");
-    } else {
-        display.println(notification.title);
-    }
-    if (notification.message.length() > 40) { // Giới hạn 40 ký tự
-         display.println(notification.message.substring(0, 37) + "...");
-    } else {
-        display.println(notification.message);
-    }
-    display.display();
-}
+    // display.clearDisplay();
+    // display.setTextSize(1); // Kích thước chữ nhỏ
+    // display.setTextColor(SSD1306_WHITE);
+    // display.setCursor(0,0);
+    // display.println("NEW NOTIF:");
+    // display.println("-----------");
+    // display.print(notification.app);
+    // display.print(": ");
+    // // Giới hạn độ dài nội dung để không tràn màn hình
+    // if (notification.title.length() > 20) { // Giới hạn 20 ký tự
+    //     display.println(notification.title.substring(0, 17) + "...");
+    // } else {
+    //     display.println(notification.title);
+    // }
+    // if (notification.message.length() > 40) { // Giới hạn 40 ký tự
+    //      display.println(notification.message.substring(0, 37) + "...");
+    // } else {
+    //     display.println(notification.message);
+    // }
+    // display.display();
+//}
 
 
 // Hàm mới để cập nhật hiển thị OLED (bao gồm icon và văn bản)
@@ -190,7 +170,7 @@ void updateNavigationDisplay() {
     my_vn_font.print(xPos, (5 * line_height)+2, currentNavData.directions, WHITE);
 
     xPos -= 15; // Di chuyển sang trái 2 pixel mỗi lần cập nhật
-    if (xPos < - (int) (currentNavData.directions.length() * 6)) { // Nếu đã trôi hết chữ
+    if (xPos < - (int) (currentNavData.directions.length() * 2)) { // Nếu đã trôi hết chữ
         xPos = 127; // Đặt lại vị trí bắt đầu từ bên        
     }
     
@@ -253,7 +233,6 @@ void configCallback(Config config, uint32_t a, uint32_t b)
                                             || currentNavData.title.equalsIgnoreCase("0m"));    
                     if (!is_title_invalid) 
                     {
-
                         // sscanf(currentNavData.title.c_str(), "%f%s", &lane_track_total.f_dist, lane_track_total.units);
                         // if (strcmp(lane_track_total.units, "m") == 0) {
                         //     lane_track_total.f_dist_convert = lane_track_total.f_dist; // Đã là mét
